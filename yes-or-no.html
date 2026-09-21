@@ -18,6 +18,7 @@
       --green: #30a341;
       --red: #f05b61;
       --result-color: #238636;
+      --footer-height: calc(44px + env(safe-area-inset-bottom));
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
       --round: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Trebuchet MS", var(--font);
     }
@@ -30,7 +31,7 @@
     button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     button:disabled { cursor: default; opacity: .5; }
     button { border: 0; background: none; }
-    button:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
+    button:focus-visible, a:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
     input, textarea { outline: none; }
     svg { display: block; width: 20px; height: 20px; flex: 0 0 auto; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
@@ -39,7 +40,7 @@
     .language-picker option { color: #303632; background: #fff; }
     .language-picker select:focus-visible { outline: 2px solid currentColor; }
     .app { flex: 1; min-width: 0; }
-    .compose-view { display: flex; flex-direction: column; min-height: var(--viewport-height, 100dvh); padding: max(72px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-left), env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)); }
+    .compose-view { display: flex; flex-direction: column; min-height: calc(var(--viewport-height, 100dvh) - var(--footer-height)); padding: max(72px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-left), env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)); }
     .composer { width: min(100%, 600px); margin: auto; }
     .brand { text-align: center; margin-bottom: 42px; }
     .wordmark { display: flex; justify-content: center; align-items: baseline; gap: 12px; margin: 0; font-family: var(--round); font-size: 80px; font-weight: 850; line-height: 1.12; letter-spacing: -4px; }
@@ -83,7 +84,7 @@
     .form-error { margin: 12px 0 0; font-size: 13px; line-height: 1.7; color: #bc303c; }
     .request-status { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
     .result-note { max-width: 440px; margin: 0; font-size: 13px; line-height: 1.8; }
-    .result-view { display: flex; flex-direction: column; min-height: var(--viewport-height, 100dvh); padding: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left)); }
+    .result-view { display: flex; flex-direction: column; min-height: calc(var(--viewport-height, 100dvh) - var(--footer-height)); padding: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left)); }
     .result-header { display: flex; padding-right: 140px; }
     .result-header .text-button { color: inherit; gap: 8px; }
     .result-header svg { width: 18px; height: 18px; }
@@ -97,6 +98,10 @@
     .spin { animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .noscript { padding: 16px; text-align: center; font-size: 14px; }
+    .site-footer { min-height: var(--footer-height); padding: 0 20px env(safe-area-inset-bottom); text-align: center; color: var(--muted); }
+    .site-footer a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: inherit; font-size: 11px; text-decoration: none; }
+    .site-footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    body[data-view="result"] .site-footer { color: inherit; }
     @media (max-width: 560px) {
       .compose-view { padding-inline: max(20px, env(safe-area-inset-left), env(safe-area-inset-right)); }
       .brand { margin-bottom: 34px; }
@@ -106,7 +111,6 @@
       .question-shell { gap: 8px; padding: 12px; border-radius: 18px; }
       .question-input { font-size: 17px; padding-left: 3px; }
       .extras { column-gap: 20px; }
-      .result-view { display: flex; flex-direction: column; min-height: var(--viewport-height, 100dvh); padding: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left)); }
       .result-stage { gap: 18px; padding-block: 36px; }
       .result-answer { font-size: clamp(112px, 36vw, 190px); }
       .result-prompt { font-size: 15px; }
@@ -180,6 +184,7 @@
     </section>
     <div id="live-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   </main>
+  <footer class="site-footer"><a href="https://github.com/Ayi1337/yesorno" target="_blank" rel="noopener noreferrer">GitHub</a></footer>
   <script>
   (() => {
     'use strict';
