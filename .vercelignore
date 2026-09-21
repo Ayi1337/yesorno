@@ -1,0 +1,9 @@
+*
+!/.python-version
+!/yes-or-no.html
+!/server.py
+!/build.py
+!/vercel.json
+!/api
+!/api/decide.py
+!/api/health.py

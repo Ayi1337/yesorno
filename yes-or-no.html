@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Yes or No — 给日常小纠结一个简单的答案。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Yes or No — 小事，别想太久。</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%2330a341'/%3E%3Cpath d='m18 31 10 10 19-21' fill='none' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fff;
+      --ink: #303632;
+      --muted: #6f766f;
+      --line: #e6e9e6;
+      --green: #30a341;
+      --red: #f05b61;
+      --result-color: #238636;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      --round: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Trebuchet MS", var(--font);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { -webkit-text-size-adjust: 100%; background: var(--paper); }
+    body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; transition: background-color .3s ease, color .3s ease; }
+    body[data-view="result"] { background: var(--result-color); color: #fff; }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    button:disabled { cursor: default; opacity: .5; }
+    button { border: 0; background: none; }
+    button:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
+    input, textarea { outline: none; }
+    svg { display: block; width: 20px; height: 20px; flex: 0 0 auto; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .language-picker { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); z-index: 1; }
+    .language-picker select { width: 132px; min-height: 44px; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: inherit; font-size: 13px; cursor: pointer; }
+    .language-picker option { color: #303632; background: #fff; }
+    .language-picker select:focus-visible { outline: 2px solid currentColor; }
+    .app { flex: 1; min-width: 0; }
+    .compose-view { display: flex; flex-direction: column; min-height: var(--viewport-height, 100dvh); padding: max(72px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-left), env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)); }
+    .composer { width: min(100%, 600px); margin: auto; }
+    .brand { text-align: center; margin-bottom: 42px; }
+    .wordmark { display: flex; justify-content: center; align-items: baseline; gap: 12px; margin: 0; font-family: var(--round); font-size: 80px; font-weight: 850; line-height: 1.12; letter-spacing: -4px; }
+    .wordmark .yes { color: var(--green); }
+    .wordmark .no { color: var(--red); }
+    .wordmark .or { font-size: .46em; font-weight: 700; letter-spacing: -1.5px; color: #8b908d; }
+    .wordmark .question-mark { margin-left: -8px; color: #969b98; }
+    .tagline { margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: var(--muted); letter-spacing: .03em; }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    .question-shell { display: flex; align-items: flex-end; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 20px; transition: border-color .18s, box-shadow .18s; }
+    .question-shell:focus-within { border-color: #9ca49e; box-shadow: 0 0 0 3px #30363208; }
+    .question-shell.invalid { border-color: #cb3b45; }
+    .question-input { display: block; flex: 1; min-width: 0; height: 44px; max-height: 180px; padding: 6px 5px; resize: none; border: 0; background: transparent; font-size: 20px; line-height: 32px; }
+    .question-input::placeholder { color: #707770; }
+    .submit-button { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; padding: 0; border-radius: 50%; color: #fff; background: var(--ink); transition: background-color .18s, transform .15s; }
+    .submit-button:hover:not(:disabled) { background: #101b13; }
+    .submit-button:active:not(:disabled) { transform: scale(.94); }
+    .submit-button svg { width: 22px; height: 22px; }
+    .extras { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 22px; margin-top: 9px; }
+    .text-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 0; border-radius: 4px; font-size: 13px; line-height: 1.5; color: var(--muted); }
+    .text-button:hover, .text-button[aria-expanded="true"] { color: var(--ink); }
+    .text-button svg { width: 14px; height: 14px; transition: transform .18s; }
+    .text-button[aria-expanded="true"] > svg { transform: rotate(45deg); }
+    .context-dot { width: 4px; height: 4px; margin-left: 1px; border-radius: 50%; background: currentColor; }
+    .extra-panel { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s cubic-bezier(.2,.7,.25,1), opacity .2s ease; }
+    .extra-panel.is-open { grid-template-rows: 1fr; opacity: 1; }
+    .panel-inner { min-height: 0; overflow: hidden; }
+    .panel-content { padding: 13px 3px 3px; }
+    .custom-hint { margin: 0 0 12px; color: var(--ink); font-size: 13px; line-height: 1.7; }
+    .custom-rows { display: grid; gap: 9px; }
+    .option-row { display: flex; align-items: center; gap: 8px; }
+    .option-input { min-width: 0; width: 100%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: transparent; font-size: 16px; line-height: 22px; }
+    .option-input:focus, .context-input:focus { border-color: #9ca49e; box-shadow: 0 0 0 3px #30363208; }
+    .option-input[aria-invalid="true"] { border-color: #cb3b45; }
+    .option-input::placeholder, .context-input::placeholder { color: #707770; }
+    .remove-option { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%; color: var(--muted); }
+    .remove-option:hover { background: #f6f7f6; color: var(--ink); }
+    .remove-option svg { width: 16px; height: 16px; }
+    .add-option { margin-top: 2px; }
+    .context-input { display: block; width: 100%; min-height: 110px; resize: vertical; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: transparent; font-size: 16px; line-height: 1.7; }
+    .form-error { margin: 12px 0 0; font-size: 13px; line-height: 1.7; color: #bc303c; }
+    .request-status { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+    .result-note { max-width: 440px; margin: 0; font-size: 13px; line-height: 1.8; }
+    .result-view { display: flex; flex-direction: column; min-height: var(--viewport-height, 100dvh); padding: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left)); }
+    .result-header { display: flex; padding-right: 140px; }
+    .result-header .text-button { color: inherit; gap: 8px; }
+    .result-header svg { width: 18px; height: 18px; }
+    .result-stage { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 22px; width: min(100%, 1100px); margin: 0 auto; padding: 40px 0; text-align: center; }
+    .result-prompt { max-width: 600px; margin: 0; font-size: 16px; font-weight: 450; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .result-answer { width: 100%; max-width: 100%; margin: 0; font-family: var(--round); font-size: clamp(120px, 23vw, 300px); font-weight: 900; letter-spacing: -.045em; line-height: 1.12; text-wrap: balance; overflow-wrap: anywhere; outline: none; }
+    .result-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }
+    .result-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 11px 20px; border: 1px solid #ffffff70; border-radius: 999px; color: inherit; font-size: 14px; line-height: 22px; transition: background-color .15s; }
+    .result-button:hover:not(:disabled) { background: #ffffff18; }
+    .result-button svg { width: 16px; height: 16px; }
+    .spin { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .noscript { padding: 16px; text-align: center; font-size: 14px; }
+    @media (max-width: 560px) {
+      .compose-view { padding-inline: max(20px, env(safe-area-inset-left), env(safe-area-inset-right)); }
+      .brand { margin-bottom: 34px; }
+      .wordmark { font-size: clamp(54px, 15vw, 72px); gap: 9px; letter-spacing: -3px; }
+      .wordmark .question-mark { margin-left: -7px; }
+      .tagline { margin-top: 13px; font-size: 13px; }
+      .question-shell { gap: 8px; padding: 12px; border-radius: 18px; }
+      .question-input { font-size: 17px; padding-left: 3px; }
+      .extras { column-gap: 20px; }
+      .result-view { display: flex; flex-direction: column; min-height: var(--viewport-height, 100dvh); padding: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left)); }
+      .result-stage { gap: 18px; padding-block: 36px; }
+      .result-answer { font-size: clamp(112px, 36vw, 190px); }
+      .result-prompt { font-size: 15px; }
+      .result-button { padding-inline: 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    @media (forced-colors: active) { .question-shell, .submit-button, .result-button { border: 1px solid ButtonText; } body[data-view="result"] { background: Canvas; color: CanvasText; } }
+  </style>
+</head>
+<body data-view="compose">
+  <svg xmlns="http://www.w3.org/2000/svg" class="sr-only" aria-hidden="true">
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6"/></symbol>
+    <symbol id="i-spinner" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-8-8"/></symbol>
+  </svg>
+  <main class="app">
+    <div class="language-picker"><label for="language" class="sr-only" data-i18n="language">语言</label><select id="language">
+      <option value="zh-Hans" lang="zh-Hans">简体中文</option>
+      <option value="zh-Hant" lang="zh-Hant">繁體中文</option>
+      <option value="en" lang="en">English</option>
+    </select></div>
+    <noscript><p class="noscript"><span lang="zh-Hans">请启用 JavaScript 以体验交互。</span> / <span lang="zh-Hant">請啟用 JavaScript 以使用互動功能。</span> / <span lang="en">Enable JavaScript to use this app.</span></p></noscript>
+    <section id="compose-view" class="compose-view" aria-label="提出一个小问题" data-i18n-aria-label="composeLabel">
+      <div id="composer" class="composer">
+      <header class="brand">
+        <h1 class="wordmark" aria-label="Yes or No?"><span class="yes" aria-hidden="true">Yes</span><span class="or" aria-hidden="true">or</span><span class="no" aria-hidden="true">No</span><span class="question-mark" aria-hidden="true">?</span></h1>
+        <p class="tagline" data-i18n="tagline">小事，别想太久。</p>
+      </header>
+      <form id="decision-form" novalidate>
+        <fieldset id="input-fields">
+          <legend class="sr-only" data-i18n="legend">问题和选项</legend>
+          <label for="question" class="sr-only" data-i18n="questionLabel">你在纠结什么？</label>
+          <div class="question-shell" id="question-shell">
+            <textarea id="question" name="question" class="question-input" rows="1" maxlength="400" placeholder="今天要出门吗？" aria-required="true" aria-describedby="form-error" spellcheck="false"></textarea>
+            <button id="decide-button" class="submit-button" type="submit" aria-label="帮我选一个" title="帮我选一个（Enter）" data-i18n-title="decideTitle"><svg id="decide-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use id="decide-icon-use" href="#i-arrow"/></svg></button>
+          </div>
+          <div class="extras">
+            <button id="custom-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="custom-panel"><svg fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><use href="#i-plus"/></svg><span data-i18n="customOptions">自定义选项</span></button>
+            <button id="context-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="context-panel"><svg fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><use href="#i-plus"/></svg><span data-i18n="addContext">补充背景</span><span id="context-dot" class="context-dot" hidden aria-hidden="true"></span><span id="context-added" class="sr-only" hidden data-i18n="addedHint">（已添加）</span></button>
+          </div>
+          <div id="custom-panel" class="extra-panel" inert aria-hidden="true"><div class="panel-inner"><div class="panel-content">
+            <p id="custom-hint" class="custom-hint" role="status" hidden></p>
+            <div id="custom-rows" class="custom-rows"></div>
+            <button id="add-option" class="text-button add-option" type="button"><svg fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><use href="#i-plus"/></svg><span data-i18n="addOption">添加选项</span></button>
+          </div>
+          </div></div>
+          <div id="context-panel" class="extra-panel" inert aria-hidden="true"><div class="panel-inner"><div class="panel-content">
+            <label for="context" class="sr-only" data-i18n="contextLabel">补充背景，可选</label>
+            <textarea id="context" name="context" class="context-input" rows="3" maxlength="2000" placeholder="有什么需要考虑的？比如时间、预算，或者你更偏向哪一个。" data-i18n-placeholder="contextPlaceholder" spellcheck="false"></textarea>
+          </div>
+          </div></div>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <p id="request-status" class="request-status" role="status" hidden data-i18n="requestStatus">正在帮你选…</p>
+        </fieldset>
+      </form>
+      </div>
+    </section>
+    <section id="result-view" class="result-view" aria-labelledby="result-answer" hidden>
+      <div class="result-header"><button id="edit-button" class="text-button" type="button"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-back"/></svg><span data-i18n="editQuestion">修改问题</span></button></div>
+      <div class="result-stage">
+        <p id="result-prompt" class="result-prompt"></p>
+        <h2 id="result-answer" class="result-answer" tabindex="-1"></h2>
+        <p id="result-note" class="result-note" hidden></p>
+      </div>
+      <div class="result-actions">
+        <button id="result-context-button" class="result-button" type="button"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><use href="#i-plus"/></svg><span id="result-context-label">补充背景</span></button>
+        <button id="new-button" class="result-button" type="button"><span data-i18n="newQuestion">问点别的</span><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+      </div>
+    </section>
+    <div id="live-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+  </main>
+  <script>
+  (() => {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const MESSAGES = {
+  "zh-Hans": {
+    "tagline": "小事，别想太久。",
+    "description": "Yes or No — 给日常小纠结一个简单的答案。",
+    "language": "语言",
+    "composeLabel": "提出一个小问题",
+    "legend": "问题和选项",
+    "questionLabel": "你在纠结什么？",
+    "questionPlaceholder": "今天要出门吗？",
+    "customPlaceholder": "想问什么？也可以只填选项。",
+    "decide": "帮我选一个",
+    "decideTitle": "帮我选一个（Enter）",
+    "customOptions": "自定义选项",
+    "addContext": "补充背景",
+    "contextLabel": "补充背景，可选",
+    "contextPlaceholder": "有什么需要考虑的？比如时间、预算，或者你更偏向哪一个。",
+    "addedHint": "（已添加）",
+    "addOption": "添加选项",
+    "maxOptions": "最多 6 个选项",
+    "option": "选项 {number}",
+    "optionFirst": "选项 1，比如汉堡",
+    "optionSecond": "选项 2，比如沙拉",
+    "removeOption": "移除选项 {number}",
+    "requestStatus": "正在帮你选…",
+    "choosing": "正在选择",
+    "editQuestion": "修改问题",
+    "adjustContext": "调整背景",
+    "newQuestion": "问点别的",
+    "note0": "选项很接近，先给你一个方向。",
+    "note1": "目前稍微偏向这个选择。",
+    "note2": "目前的倾向比较明显。",
+    "announcement": "这次选：{choice}。{note}",
+    "emptyQuestion": "先写下你在纠结的小问题。",
+    "emptyOption": "填一下这个选项，或者把它移除。",
+    "duplicateOption": "这两个选项一样，换一个吧。",
+    "invalid_input": "请检查问题和选项后再试。",
+    "invalid_response": "这次没有收到完整答案，请再试一次。",
+    "upstream_error": "这次没能得到答案，请再试一次。",
+    "timeout": "这次等得有点久，请再试一次。你的输入还在。",
+    "connection_error": "暂时连不上服务，请稍后重试。你的输入还在。",
+    "busy": "还在处理上一个问题，稍等一下再试。",
+    "service_configuration": "服务暂时不可用，请稍后再试。",
+    "upstream_busy": "现在有点忙，稍等几秒再试。",
+    "needs_options": "这个问题没法用 Yes 或 No 回答哦，请填写自定义选项。",
+    "not_decision": "换成一个你想做决定的问题吧，比如：今天要出门吗？",
+    "forbidden": "请重新打开页面或 App 后再试。",
+    "not_found": "服务地址不可用，请稍后再试。"
+  },
+  "zh-Hant": {
+    "tagline": "小事，別想太久。",
+    "description": "Yes or No — 給日常小糾結一個簡單的答案。",
+    "language": "語言",
+    "composeLabel": "提出一個小問題",
+    "legend": "問題和選項",
+    "questionLabel": "你在糾結什麼？",
+    "questionPlaceholder": "今天要出門嗎？",
+    "customPlaceholder": "想問什麼？也可以只填選項。",
+    "decide": "幫我選一個",
+    "decideTitle": "幫我選一個（Enter）",
+    "customOptions": "自訂選項",
+    "addContext": "補充背景",
+    "contextLabel": "補充背景，可選",
+    "contextPlaceholder": "有什麼需要考慮的？比如時間、預算，或者你更偏向哪一個。",
+    "addedHint": "（已新增）",
+    "addOption": "新增選項",
+    "maxOptions": "最多 6 個選項",
+    "option": "選項 {number}",
+    "optionFirst": "選項 1，比如漢堡",
+    "optionSecond": "選項 2，比如沙拉",
+    "removeOption": "移除選項 {number}",
+    "requestStatus": "正在幫你選…",
+    "choosing": "正在選擇",
+    "editQuestion": "修改問題",
+    "adjustContext": "調整背景",
+    "newQuestion": "問點別的",
+    "note0": "選項很接近，先給你一個方向。",
+    "note1": "目前稍微偏向這個選擇。",
+    "note2": "目前的傾向比較明顯。",
+    "announcement": "這次選：{choice}。{note}",
+    "emptyQuestion": "先寫下你在糾結的小問題。",
+    "emptyOption": "填一下這個選項，或者將它移除。",
+    "duplicateOption": "這兩個選項一樣，換一個吧。",
+    "invalid_input": "請檢查問題和選項後再試。",
+    "invalid_response": "這次沒有收到完整答案，請再試一次。",
+    "upstream_error": "這次沒能得到答案，請再試一次。",
+    "timeout": "這次等得有點久，請再試一次。你的輸入還在。",
+    "connection_error": "暫時連不上服務，請稍後重試。你的輸入還在。",
+    "busy": "還在處理上一個問題，稍等一下再試。",
+    "service_configuration": "服務暫時無法使用，請稍後再試。",
+    "upstream_busy": "現在有點忙，稍等幾秒再試。",
+    "needs_options": "這個問題無法用 Yes 或 No 回答，請填寫自訂選項。",
+    "not_decision": "換成一個你想做決定的問題吧，比如：今天要出門嗎？",
+    "forbidden": "請重新開啟網頁或 App 後再試。",
+    "not_found": "服務位址無法使用，請稍後再試。"
+  },
+  "en": {
+    "tagline": "Small choices. Less overthinking.",
+    "description": "Yes or No — A simple answer to everyday indecision.",
+    "language": "Language",
+    "composeLabel": "Ask a small question",
+    "legend": "Question and options",
+    "questionLabel": "What are you deciding?",
+    "questionPlaceholder": "Should I go out today?",
+    "customPlaceholder": "Ask a question, or just add options.",
+    "decide": "Help me choose",
+    "decideTitle": "Help me choose (Enter)",
+    "customOptions": "Custom options",
+    "addContext": "Add context",
+    "contextLabel": "Additional context, optional",
+    "contextPlaceholder": "Anything to consider? Time, budget, or a choice you already prefer.",
+    "addedHint": "(added)",
+    "addOption": "Add option",
+    "maxOptions": "Up to 6 options",
+    "option": "Option {number}",
+    "optionFirst": "Option 1, e.g. burger",
+    "optionSecond": "Option 2, e.g. salad",
+    "removeOption": "Remove option {number}",
+    "requestStatus": "Choosing for you…",
+    "choosing": "Choosing",
+    "editQuestion": "Edit question",
+    "adjustContext": "Edit context",
+    "newQuestion": "Ask something else",
+    "note0": "The options are close. Here’s a direction to start with.",
+    "note1": "This choice has a slight edge for now.",
+    "note2": "There’s a clear preference for this choice right now.",
+    "announcement": "This time: {choice}. {note}",
+    "emptyQuestion": "Start with the small question on your mind.",
+    "emptyOption": "Fill in this option or remove it.",
+    "duplicateOption": "These options are the same. Try a different one.",
+    "invalid_input": "Check your question and options, then try again.",
+    "invalid_response": "The answer was incomplete. Please try again.",
+    "upstream_error": "Couldn’t get an answer this time. Please try again.",
+    "timeout": "This is taking too long. Please try again. Your input is still here.",
+    "connection_error": "Can’t connect right now. Try again later. Your input is still here.",
+    "busy": "Your previous question is still being processed. Try again shortly.",
+    "service_configuration": "The service is temporarily unavailable. Please try again later.",
+    "upstream_busy": "Things are busy right now. Try again in a few seconds.",
+    "needs_options": "This question needs more than yes or no. Add your own options.",
+    "not_decision": "Try a question you want to decide on, like: Should I go out today?",
+    "forbidden": "Reopen the page or app and try again.",
+    "not_found": "The service address is unavailable. Please try again later."
+  }
+};
+    const MAX_OPTIONS = 6;
+    const ERROR_CODES = new Set(['invalid_input', 'invalid_response', 'upstream_error', 'timeout', 'connection_error', 'busy', 'service_configuration', 'upstream_busy', 'needs_options', 'not_decision', 'forbidden', 'not_found']);
+    function preferredLanguage(languages) {
+      for (const language of languages) {
+        const tag = language.toLowerCase().replaceAll('_', '-');
+        if (tag === 'en' || tag.startsWith('en-')) return 'en';
+        if (tag === 'zh' || tag.startsWith('zh-')) {
+          if (tag.split('-').includes('hans')) return 'zh-Hans';
+          return /-(hant|tw|hk|mo)(-|$)/.test(tag) ? 'zh-Hant' : 'zh-Hans';
+        }
+      }
+      return 'en';
+    }
+    let savedLanguage;
+    try { savedLanguage = localStorage.getItem('yon.language'); } catch {}
+    if (!Object.hasOwn(MESSAGES, savedLanguage)) savedLanguage = null;
+    let language = savedLanguage || preferredLanguage(navigator.languages || [navigator.language]);
+    const t = (key, values = {}) => MESSAGES[language][key].replace(/\{(\w+)\}/g, (_, name) => values[name] ?? `{${name}}`);
+    const decisionError = code => Object.assign(new Error(code), { code });
+    function applyLanguage() {
+      document.documentElement.lang = language;
+      document.title = `Yes or No — ${t('tagline')}`;
+      document.querySelector('meta[name="description"]').content = t('description');
+      $('language').value = language;
+      document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
+      for (const attribute of ['aria-label', 'title', 'placeholder']) {
+        document.querySelectorAll(`[data-i18n-${attribute}]`).forEach(node => node.setAttribute(attribute, t(node.getAttribute(`data-i18n-${attribute}`))));
+      }
+      $('question').placeholder = t(state.mode === 'custom' ? 'customPlaceholder' : 'questionPlaceholder');
+      $('decide-button').setAttribute('aria-label', t(state.busy ? 'choosing' : 'decide'));
+      $('add-option').querySelector('span').textContent = t(state.options.length >= MAX_OPTIONS ? 'maxOptions' : 'addOption');
+      document.querySelectorAll('.option-input').forEach((input, index) => localizeOption(input, index));
+      if (state.errorKey) $('form-error').textContent = t(state.errorKey);
+      if (state.automaticQuestion !== null) $('custom-hint').textContent = t('needs_options');
+      if (state.result && state.view === 'result') renderResultText();
+      resizeQuestion();
+    }
+    function localizeOption(input, index) {
+      input.placeholder = t(index === 0 ? 'optionFirst' : index === 1 ? 'optionSecond' : 'option', { number: index + 1 });
+      input.setAttribute('aria-label', t('option', { number: index + 1 }));
+      input.parentElement.querySelector('.remove-option').setAttribute('aria-label', t('removeOption', { number: index + 1 }));
+    }
+    function renderResultText() {
+      const choice = state.result.choice;
+      const note = t(state.result.noteKey);
+      $('result-answer').textContent = choice;
+      $('result-note').textContent = note;
+      $('result-context-label').textContent = t(state.snapshot.context ? 'adjustContext' : 'addContext');
+      $('live-status').textContent = t('announcement', { choice, note });
+      if (state.view === 'result') fitAnswer();
+    }
+    const PALETTES = [
+      ['#646e91', '#516cb0', '#4263c7'], ['#756785', '#7a5d9d', '#8054b5'],
+      ['#7c6b55', '#956532', '#a45c22'], ['#896575', '#a34f73', '#b63e72'],
+      ['#526f71', '#33767e', '#147b85'], ['#6d6c89', '#6768a0', '#5b61b4'],
+    ];
+    const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const state = { mode: 'binary', automaticQuestion: null, options: ['', ''], view: 'compose', busy: false, snapshot: null, result: null, colors: new Map() };
+    const icon = id => `<svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><use href="#${id}"/></svg>`;
+    function randomIndex(count) {
+      if (!globalThis.crypto?.getRandomValues) return Math.floor(Math.random() * count);
+      const bucket = new Uint32Array(1);
+      const ceiling = Math.floor(4294967296 / count) * count;
+      do { crypto.getRandomValues(bucket); } while (bucket[0] >= ceiling);
+      return bucket[0] % count;
+    }
+    async function decide(request) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 16000);
+      let result;
+      try {
+        const response = await fetch('/api/decide', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(request),
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw decisionError(ERROR_CODES.has(data?.error?.code) ? data.error.code : 'upstream_error');
+        }
+        if (!request.options.includes(data?.choice)) throw decisionError('invalid_response');
+        result = data;
+      } catch (error) {
+        if (error.name === 'AbortError') throw decisionError('timeout');
+        if (error instanceof TypeError || error instanceof SyntaxError) throw decisionError('connection_error');
+        throw error;
+      } finally { clearTimeout(timeout); }
+      return result;
+    }
+    function resultAppearance(result) {
+      const probabilities = Object.values(result.probabilities).sort((a, b) => b - a);
+      const gap = probabilities[0] - probabilities[1];
+      const level = result.confidence < .2 || gap < .12 ? 0 : result.confidence < .65 || gap < .35 ? 1 : 2;
+      let palette;
+      if (state.snapshot.mode === 'binary') palette = result.choice === 'Yes' ? ['#53715d', '#367a49', '#238636'] : ['#876269', '#ad4c57', '#cc3f48'];
+      else {
+        if (!state.colors.has(result.choice)) {
+          const unused = PALETTES.map((_, index) => index).filter(index => ![...state.colors.values()].includes(index));
+          state.colors.set(result.choice, unused.length ? unused[randomIndex(unused.length)] : randomIndex(PALETTES.length));
+        }
+        palette = PALETTES[state.colors.get(result.choice)];
+      }
+      return { color: palette[level], noteKey: `note${level}` };
+    }
+    function setView(name) {
+      state.view = name;
+      document.body.dataset.view = name;
+      $('compose-view').hidden = name !== 'compose';
+      $('result-view').hidden = name !== 'result';
+      if (name === 'compose') $('live-status').textContent = '';
+      const color = name === 'result' ? state.result.color : '#ffffff';
+      document.querySelector('meta[name="theme-color"]').content = color;
+      document.documentElement.style.backgroundColor = color;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    function syncViewport() {
+      const view = window.visualViewport;
+      if (!view || view.scale === 1) document.documentElement.style.setProperty('--viewport-height', `${view?.height || innerHeight}px`);
+      if (state.view === 'result') fitAnswer();
+    }
+    function fitAnswer() {
+      const answer = $('result-answer');
+      answer.style.fontSize = '';
+      const style = getComputedStyle(answer), size = parseFloat(style.fontSize);
+      const canvas = document.createElement('canvas').getContext('2d');
+      canvas.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const width = canvas.measureText(answer.textContent).width + parseFloat(style.letterSpacing) * Math.max(0, [...answer.textContent].length - 1);
+      if (width > answer.clientWidth) answer.style.fontSize = `${Math.max(36, Math.floor(size * answer.clientWidth / width * .98))}px`;
+    }
+    function setPanel(id, open, input = null) {
+      const panel = $(id);
+      panel.inert = !open;
+      panel.setAttribute('aria-hidden', String(!open));
+      panel.classList.toggle('is-open', open);
+      if (!open || !input) return;
+      input.focus({ preventScroll: true });
+      requestAnimationFrame(async () => {
+        await Promise.allSettled(panel.getAnimations().map(animation => animation.finished));
+        if (panel.inert || document.activeElement !== input) return;
+        const bounds = input.getBoundingClientRect();
+        if (bounds.bottom > (window.visualViewport?.height || innerHeight) || bounds.top < 0) input.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'instant' : 'smooth' });
+      });
+    }
+    function resizeQuestion() {
+      const input = $('question');
+      input.style.height = '44px';
+      input.style.height = `${Math.min(180, Math.max(44, input.scrollHeight))}px`;
+    }
+    function clearError() {
+      state.errorKey = null;
+      $('form-error').hidden = true;
+      $('form-error').textContent = '';
+      $('question-shell').classList.remove('invalid');
+      document.querySelectorAll('[aria-invalid]').forEach(node => node.removeAttribute('aria-invalid'));
+    }
+    function showError(key, input) {
+      state.errorKey = key;
+      $('form-error').textContent = t(key);
+      $('form-error').hidden = false;
+      if (input) {
+        input.setAttribute('aria-invalid', 'true');
+        if (input === $('question')) $('question-shell').classList.add('invalid');
+        input.focus();
+      }
+    }
+    function renderOptions(focusIndex = null) {
+      $('custom-rows').replaceChildren();
+      state.options.forEach((value, index) => {
+        const row = document.createElement('div');
+        row.className = 'option-row';
+        const input = document.createElement('input');
+        Object.assign(input, { id: `option-${index}`, className: 'option-input', type: 'text', maxLength: 60, value, autocomplete: 'off' });
+        input.setAttribute('aria-describedby', 'form-error');
+        input.addEventListener('input', () => { state.options[index] = input.value; clearError(); });
+        input.addEventListener('keydown', event => {
+          if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey && !event.isComposing) {
+            event.preventDefault();
+            const next = $(`option-${index + 1}`);
+            if (next) next.focus(); else $('decision-form').requestSubmit();
+          }
+        });
+        const remove = document.createElement('button');
+        Object.assign(remove, { type: 'button', className: 'remove-option', hidden: state.options.length <= 2 });
+        remove.innerHTML = icon('i-x');
+        remove.addEventListener('click', () => {
+          if (state.options.length <= 2) return;
+          state.options.splice(index, 1);
+          clearError();
+          renderOptions(Math.min(index, state.options.length - 1));
+        });
+        row.append(input, remove);
+        localizeOption(input, index);
+        $('custom-rows').append(row);
+      });
+      $('add-option').disabled = state.options.length >= MAX_OPTIONS;
+      $('add-option').querySelector('span').textContent = t(state.options.length >= MAX_OPTIONS ? 'maxOptions' : 'addOption');
+      if (focusIndex !== null) $(`option-${focusIndex}`).focus();
+    }
+    function setMode(custom, focus = true, automaticQuestion = null) {
+      state.mode = custom ? 'custom' : 'binary';
+      state.automaticQuestion = custom ? automaticQuestion : null;
+      $('custom-hint').hidden = !custom || automaticQuestion === null;
+      $('custom-toggle').setAttribute('aria-expanded', String(custom));
+      $('question').setAttribute('aria-required', String(!custom));
+      $('question').placeholder = t(custom ? 'customPlaceholder' : 'questionPlaceholder');
+      resizeQuestion();
+      clearError();
+      if (custom) renderOptions();
+      setPanel('custom-panel', custom, focus && custom ? $('option-0') : null);
+      if (!custom && focus) $('question').focus({ preventScroll: true });
+    }
+    function setContext(open, focus = true) {
+      if (!open && $('context-panel').contains(document.activeElement)) $('context-toggle').focus({ preventScroll: true });
+      setPanel('context-panel', open, focus && open ? $('context') : null);
+      $('context-toggle').setAttribute('aria-expanded', String(open));
+    }
+    function setBusy(busy) {
+      state.busy = busy;
+      $('input-fields').disabled = busy;
+      $('decision-form').setAttribute('aria-busy', String(busy));
+      $('result-view').setAttribute('aria-busy', String(busy));
+      $('request-status').hidden = !busy;
+      $('decide-button').setAttribute('aria-label', t(busy ? 'choosing' : 'decide'));
+      $('decide-icon-use').setAttribute('href', busy ? '#i-spinner' : '#i-arrow');
+      $('decide-icon').classList.toggle('spin', busy);
+      for (const id of ['result-context-button', 'edit-button', 'new-button']) $(id).disabled = busy;
+    }
+    function getRequest() {
+      const question = $('question').value.trim();
+      if (state.mode === 'binary' && !question) {
+        showError('emptyQuestion', $('question'));
+        return null;
+      }
+      let options = ['Yes', 'No'];
+      if (state.mode === 'custom') {
+        options = state.options.map(value => value.trim());
+        const blank = options.findIndex(value => !value);
+        if (blank >= 0) { showError('emptyOption', $(`option-${blank}`)); return null; }
+        const seen = new Set();
+        for (let index = 0; index < options.length; index++) {
+          const canonical = options[index].normalize('NFKC').toLocaleLowerCase();
+          if (seen.has(canonical)) { showError('duplicateOption', $(`option-${index}`)); return null; }
+          seen.add(canonical);
+        }
+      }
+      return { question, context: $('context').value.trim(), options, mode: state.mode };
+    }
+    function showResult(result) {
+      const appearance = resultAppearance(result);
+      state.result = { ...result, ...appearance };
+      document.body.style.setProperty('--result-color', appearance.color);
+      $('result-prompt').textContent = state.snapshot.question;
+      $('result-prompt').hidden = !state.snapshot.question;
+      renderResultText();
+      $('result-note').hidden = false;
+      document.activeElement?.blur();
+      setView('result');
+      fitAnswer();
+      $('result-answer').focus({ preventScroll: true });
+      const frames = reducedMotion() ? [{ opacity: .6 }, { opacity: 1 }] : [{ transform: 'translateY(10px) scale(.94)', opacity: 0, offset: 0 }, { transform: 'translateY(0) scale(1.015)', opacity: 1, offset: .75 }, { transform: 'none', opacity: 1, offset: 1 }];
+      $('result-answer').animate(frames, { duration: reducedMotion() ? 100 : 320, easing: 'cubic-bezier(.2,.7,.25,1)' });
+    }
+    async function runDecision(request) {
+      if (state.busy) return;
+      clearError();
+      setBusy(true);
+      try {
+        state.snapshot = request;
+        showResult(await decide(request));
+      } catch (error) {
+        setBusy(false);
+        if (error.code === 'needs_options') {
+          $('custom-hint').textContent = t('needs_options');
+          setMode(true, true, request.question);
+        } else {
+          showError(ERROR_CODES.has(error.code) ? error.code : 'upstream_error');
+        }
+      } finally { setBusy(false); }
+    }
+    $('decision-form').addEventListener('submit', event => {
+      event.preventDefault();
+      if (state.busy || state.view !== 'compose') return;
+      clearError();
+      const request = getRequest();
+      if (request) runDecision(request);
+    });
+    $('question').addEventListener('input', () => {
+      if (state.automaticQuestion !== null && $('question').value.trim() !== state.automaticQuestion) {
+        setMode(false, false);
+      }
+      clearError();
+      resizeQuestion();
+    });
+    $('question').addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        $('decision-form').requestSubmit();
+      }
+    });
+    $('custom-toggle').addEventListener('click', () => setMode(state.mode === 'binary'));
+    $('add-option').addEventListener('click', () => {
+      if (state.options.length >= MAX_OPTIONS) return;
+      state.options.push('');
+      clearError();
+      renderOptions(state.options.length - 1);
+    });
+    $('context-toggle').addEventListener('click', () => setContext($('context-panel').inert));
+    $('context').addEventListener('input', () => {
+      const empty = !$('context').value.trim();
+      $('context-dot').hidden = empty;
+      $('context-added').hidden = empty;
+    });
+    $('result-context-button').addEventListener('click', () => {
+      setView('compose');
+      resizeQuestion();
+      setContext(true);
+    });
+    $('edit-button').addEventListener('click', () => {
+      setView('compose');
+      resizeQuestion();
+      $('question').focus({ preventScroll: true });
+    });
+    $('new-button').addEventListener('click', () => {
+      $('decision-form').reset();
+      state.options = ['', ''];
+      state.snapshot = null;
+      state.result = null;
+      state.colors.clear();
+      $('context-dot').hidden = true;
+      $('context-added').hidden = true;
+      setMode(false, false);
+      setContext(false, false);
+      setView('compose');
+      resizeQuestion();
+      $('question').focus({ preventScroll: true });
+      $('live-status').textContent = '';
+    });
+    document.addEventListener('keydown', event => {
+      if (event.isComposing || state.busy) return;
+      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && state.view === 'compose') {
+        event.preventDefault();
+        $('decision-form').requestSubmit();
+      }
+      if (event.key === 'Escape' && state.view === 'result') $('edit-button').click();
+    });
+    $('language').addEventListener('change', event => {
+      language = event.target.value;
+      savedLanguage = language;
+      try { localStorage.setItem('yon.language', language); } catch {}
+      applyLanguage();
+    });
+    window.addEventListener('languagechange', () => {
+      if (savedLanguage) return;
+      language = preferredLanguage(navigator.languages || [navigator.language]);
+      applyLanguage();
+    });
+    applyLanguage();
+    window.addEventListener('resize', syncViewport);
+    window.visualViewport?.addEventListener('resize', syncViewport);
+    syncViewport();
+  })();
+  </script>
+</body>
+</html>
