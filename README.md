@@ -17,3 +17,7 @@ python3 -B server.py
 ## 部署
 
 将仓库导入 Vercel，配置服务端环境变量 `TYPESAFE_API_KEY`，即可按仓库内配置构建部署。密钥仅用于后端。
+
+## 社区
+
+感谢 [LINUX DO](https://linux.do/) 社区。
